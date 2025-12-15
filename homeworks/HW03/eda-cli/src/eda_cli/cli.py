@@ -160,14 +160,9 @@ def report(
         f.write(
             f"- Есть колонки со слишком большим количеством нулей (>{quality_flags['zero_share_threshold']:.0%}): **{quality_flags['has_many_zero_values']}**\n\n")
         # Явное использование дополнительных метрик качества
-        f.write(
-            f"- Минимальное число уникальных значений в колонке: "
-            f"**{quality_flags['min_unique_values_count']}**\n"
-        )
-        f.write(
-            f"- Максимальная доля нулей в числовых колонках: "
-            f"**{quality_flags['max_zero_values_share']:.2%}**\n\n"
-        )
+        f.write(f"- min_unique_values_count: **{quality_flags['min_unique_values_count']}**\n")
+        f.write(f"- max_zero_values_share: **{quality_flags['max_zero_values_share']:.2%}**\n")
+
         f.write("## Колонки\n\n")
         f.write("См. файл `summary.csv`.\n\n")
 

@@ -17,7 +17,7 @@ from eda_cli.core import (
 def _sample_df() -> pd.DataFrame:
     return pd.DataFrame(
         {
-            "age": [10, 20, 30, None],
+            "age": pd.Series([10, 20, 30, None], dtype="float"),
             "height": [140, 150, 160, 170],
             "city": ["A", "B", "A", None],
         }
