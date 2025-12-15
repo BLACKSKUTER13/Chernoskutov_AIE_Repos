@@ -223,10 +223,11 @@ def compute_quality_flags(df: pd.DataFrame, summary: DatasetSummary, missing_df:
         score -= 0.1
 
     # Учет новых флагов
-    if flags["has_constant_columns"]:
-        score -= 0.15  # Снижаем скор за наличие бесполезной колонки
-    if flags["has_many_zero_values"]:
-        score -= 0.10  # Снижаем скор, если в данных много нулей
+    if flags["min_unique_values_count"] <= 1:
+        score -= 0.15
+
+    if flags["max_zero_values_share"] > ZERO_SHARE_THRESHOLD:
+        score -= 0.10
 
     score = max(0.0, min(1.0, score))
     flags["quality_score"] = score
