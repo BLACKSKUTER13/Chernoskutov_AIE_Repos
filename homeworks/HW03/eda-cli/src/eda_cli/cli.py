@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 import typer
@@ -157,7 +156,7 @@ def report(
         f.write(f"- Слишком много пропусков: **{quality_flags['too_many_missing']}**\n")
 
         # Добавляем новые флаги из core.py
-        f.write(f"- Есть константные колонки: **{quality_flags['has_constant_columns']}**\n")
+        f.write(f"- Константные колонки: **{quality_flags['has_constant_columns']}** {quality_flags.get('constant_columns', [])}\n")
         f.write(
             f"- Есть колонки со слишком большим количеством нулей (>{quality_flags['zero_share_threshold']:.0%}): **{quality_flags['has_many_zero_values']}**\n\n")
         # Явное использование дополнительных метрик качества
@@ -181,7 +180,9 @@ def report(
             f.write("Нет колонок, где доля пропусков выше заданного порога.\n\n")
         else:
             f.write(f"Следующие колонки имеют долю пропусков ≥ **{min_missing_share:.2%}**:\n\n")
-            f.write(problem_cols.to_markdown(floatfmt=".2%"))
+            f.write("```text\n")
+            f.write(problem_cols.to_string())
+            f.write("\n```\n\n")
             f.write("\n\n")
 
         f.write("## Корреляция числовых признаков\n\n")

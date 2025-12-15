@@ -55,7 +55,8 @@ def test_correlation_and_top_categories():
     df = _sample_df()
     corr = correlation_matrix(df)
     # корреляция между age и height существует
-    assert "age" in corr.columns or corr.empty is False
+    assert not corr.empty
+    assert "age" in corr.columns
 
     top_cats = top_categories(df, max_columns=5, top_k=2)
     assert "city" in top_cats

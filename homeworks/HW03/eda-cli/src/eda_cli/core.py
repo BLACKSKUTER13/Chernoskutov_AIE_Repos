@@ -190,10 +190,17 @@ def compute_quality_flags(df: pd.DataFrame, summary: DatasetSummary, missing_df:
     # Новые эвристики качества данных
 
     # 1. has_constant_columns: Проверка на колонки с константными значениями (уникальных <= 1)
-    min_unique = df.nunique(dropna=False).min() if summary.n_cols > 0 else 0
-    has_constant_cols = (min_unique <= 1)
-    flags["has_constant_columns"] = has_constant_cols
-    flags["min_unique_values_count"] = int(min_unique)
+    unique_non_null = df.nunique(dropna=True)
+    non_null_counts = df.notna().sum()
+
+    constant_cols = [
+        col for col in df.columns
+        if non_null_counts[col] > 0 and unique_non_null[col] <= 1
+    ]
+
+    flags["has_constant_columns"] = len(constant_cols) > 0
+    flags["constant_columns"] = constant_cols
+    flags["min_unique_values_count"] = int(unique_non_null.min()) if len(unique_non_null) else 0
 
     # 2. has_many_zero_values: Проверка на слишком большое количество нулей в числовых колонках
     ZERO_SHARE_THRESHOLD = 0.8  # Порог доли нулей (80%)
@@ -302,12 +309,7 @@ def make_json_summary(
         },
         # Обязательное приведение quality_score к нативному float
         "quality_score": float(quality_flags["quality_score"]),
-        "quality_flags": {
-            # Убеждаемся, что все флаги и пороги имеют нативные типы
-            k: float(v) if isinstance(v, (int, float, bool)) and k.endswith("_share") else bool(v) if isinstance(v, bool) else int(v) if isinstance(v, int) else v
-            for k, v in quality_flags.items()
-            if k not in ["quality_score", "max_missing_share"]
-        },
+        "quality_flags": {k: v for k, v in quality_flags.items() if k not in ["quality_score"]},
     }
 
     # 2. Список "проблемных" колонок
@@ -329,17 +331,20 @@ def make_json_summary(
 
     # Эвристика 2: константные колонки (уникальных <= 1)
     if quality_flags["has_constant_columns"]:
-        unique_counts = df.nunique(dropna=True)
-        constant_cols_names = unique_counts[unique_counts <= 1].index.tolist()
+        unique_non_null = df.nunique(dropna=True)
+        non_null_counts = df.notna().sum()
+
+        constant_cols_names = [
+            col for col in df.columns
+            if non_null_counts[col] > 0 and unique_non_null[col] <= 1
+        ]
 
         for col_name in constant_cols_names:
-            # Проверяем, не является ли колонка только пропусками, и не добавлена ли она уже
-            if col_name not in [pc['column'] for pc in problem_cols]:
+            if col_name not in [pc["column"] for pc in problem_cols]:
                 problem_cols.append({
                     "column": col_name,
                     "reason": "is_constant",
-                    # !!! ЯВНОЕ ПРИВЕДЕНИЕ К int !!!
-                    "value": int(df[col_name].nunique(dropna=True)),
+                    "value": int(unique_non_null[col_name]),
                     "threshold": 1,
                 })
 

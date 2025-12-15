@@ -1,0 +1,20 @@
+{
+    "dataset_size": {
+        "n_rows": 36,
+        "n_cols": 14
+    },
+    "quality_score": 0.7444444444444445,
+    "quality_flags": {
+        "too_few_rows": true,
+        "too_many_columns": false,
+        "max_missing_share": 0.05555555555555555,
+        "too_many_missing": false,
+        "has_constant_columns": false,
+        "constant_columns": [],
+        "min_unique_values_count": 2,
+        "has_many_zero_values": false,
+        "max_zero_values_share": 0.6666666666666666,
+        "zero_share_threshold": 0.8
+    },
+    "problem_columns": []
+}
