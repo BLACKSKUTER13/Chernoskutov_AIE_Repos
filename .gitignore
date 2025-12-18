@@ -55,3 +55,9 @@ logs/
 *.tmp
 *.bak
 *.old
+
+# Артефакты домашних (отчёты, временные папки)
+**/reports/
+**/reports_*/
+**/reports_example/
+
