@@ -71,7 +71,11 @@ def report(
 
         # Существующий параметр
         max_hist_columns: int = typer.Option(6, help="Максимум числовых колонок для гистограмм."),
-
+        top_k_categories: int = typer.Option(
+            5,
+            "--top-k-categories",
+            help="Top-K значений для категориальных признаков.",
+        ),
         # Новые параметры
         title: str = typer.Option(
             "Data Quality and Exploratory Data Analysis Report",
@@ -108,7 +112,7 @@ def report(
     summary_df = flatten_summary_for_print(summary)
     missing_df = missing_table(df)
     corr_df = correlation_matrix(df)
-    top_cats = top_categories(df)
+    top_cats = top_categories(df, max_columns=5, top_k=top_k_categories)
 
     # 2. Качество в целом
     quality_flags = compute_quality_flags(df, summary, missing_df)

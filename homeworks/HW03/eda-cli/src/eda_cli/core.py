@@ -172,13 +172,28 @@ def top_categories(
 
     return result
 
-def compute_quality_flags(df: pd.DataFrame, summary: DatasetSummary, missing_df: pd.DataFrame) -> Dict[str, Any]:
+def compute_quality_flags(*args, **kwargs) -> Dict[str, Any]:
     """
-    Простейшие эвристики «качества» данных:
-    - слишком много пропусков;
-    - подозрительно мало строк;
-    и т.п.
+    Совместимость с двумя сигнатурами:
+    1) compute_quality_flags(summary, missing_df)   (как в шаблоне/у других)
+    2) compute_quality_flags(df, summary, missing_df) (как у тебя)
     """
+    df: Optional[pd.DataFrame]
+    summary: DatasetSummary
+    missing_df: pd.DataFrame
+
+    # Вариант как в автотестах/у других
+    if len(args) == 2 and isinstance(args[0], DatasetSummary):
+        summary, missing_df = args  # type: ignore[misc]
+        df = kwargs.get("df", None)
+    # Твой текущий вариант
+    elif len(args) == 3 and isinstance(args[0], pd.DataFrame):
+        df, summary, missing_df = args  # type: ignore[misc]
+    else:
+        raise TypeError(
+            "compute_quality_flags expects (summary, missing_df) or (df, summary, missing_df)"
+        )
+
     flags: Dict[str, Any] = {}
     flags["too_few_rows"] = summary.n_rows < 100
     flags["too_many_columns"] = summary.n_cols > 100
@@ -187,58 +202,54 @@ def compute_quality_flags(df: pd.DataFrame, summary: DatasetSummary, missing_df:
     flags["max_missing_share"] = max_missing_share
     flags["too_many_missing"] = max_missing_share > 0.5
 
-    # Новые эвристики качества данных
-
-    # 1. has_constant_columns: Проверка на колонки с константными значениями (уникальных <= 1)
-    unique_non_null = df.nunique(dropna=True)
-    non_null_counts = df.notna().sum()
-
-    constant_cols = [
-        col for col in df.columns
-        if non_null_counts[col] > 0 and unique_non_null[col] <= 1
-    ]
+    # --- Константные колонки ---
+    if df is not None and not df.empty:
+        unique_non_null = df.nunique(dropna=True)
+        non_null_counts = df.notna().sum()
+        constant_cols = [
+            col for col in df.columns
+            if non_null_counts[col] > 0 and unique_non_null[col] <= 1
+        ]
+        min_unique = int(unique_non_null.min()) if len(unique_non_null) else 0
+    else:
+        constant_cols = [c.name for c in summary.columns if c.non_null > 0 and c.unique <= 1]
+        min_unique = min([c.unique for c in summary.columns if c.non_null > 0], default=0)
 
     flags["has_constant_columns"] = len(constant_cols) > 0
     flags["constant_columns"] = constant_cols
-    flags["min_unique_values_count"] = int(unique_non_null.min()) if len(unique_non_null) else 0
+    flags["min_unique_values_count"] = int(min_unique)
 
-    # 2. has_many_zero_values: Проверка на слишком большое количество нулей в числовых колонках
-    ZERO_SHARE_THRESHOLD = 0.8  # Порог доли нулей (80%)
-    numeric_df = df.select_dtypes(include="number")
-
-    if not numeric_df.empty and summary.n_rows > 0:
-        # Считаем долю нулей по каждой числовой колонке
-        zero_share = (numeric_df == 0).sum() / summary.n_rows
-        max_zero_share = zero_share.max()
-        has_many_zeros = (max_zero_share > ZERO_SHARE_THRESHOLD)
-    else:
-        max_zero_share = 0.0
-        has_many_zeros = False
-
-    flags["has_many_zero_values"] = has_many_zeros
-    flags["max_zero_values_share"] = float(max_zero_share)
+    # --- Нули в числовых ---
+    ZERO_SHARE_THRESHOLD = 0.8
     flags["zero_share_threshold"] = ZERO_SHARE_THRESHOLD
 
-    # Скорректированный «скор» качества
+    if df is not None and not df.empty and summary.n_rows > 0:
+        numeric_df = df.select_dtypes(include="number")
+        if not numeric_df.empty:
+            zero_share = (numeric_df == 0).sum() / summary.n_rows
+            max_zero_share = float(zero_share.max())
+        else:
+            max_zero_share = 0.0
+    else:
+        max_zero_share = 0.0
 
+    flags["max_zero_values_share"] = float(max_zero_share)
+    flags["has_many_zero_values"] = max_zero_share > ZERO_SHARE_THRESHOLD
+
+    # --- quality_score ---
     score = 1.0
-    score -= max_missing_share  # чем больше пропусков, тем хуже
+    score -= max_missing_share
 
     if flags["too_few_rows"]:
         score -= 0.2
     if flags["too_many_columns"]:
         score -= 0.1
-
-    # Учет новых флагов
     if flags["min_unique_values_count"] <= 1:
         score -= 0.15
-
     if flags["max_zero_values_share"] > ZERO_SHARE_THRESHOLD:
         score -= 0.10
 
-    score = max(0.0, min(1.0, score))
-    flags["quality_score"] = score
-
+    flags["quality_score"] = max(0.0, min(1.0, score))
     return flags
 
 

@@ -47,7 +47,7 @@ def test_missing_table_and_quality_flags():
 
     summary = summarize_dataset(df)
     # ИСПРАВЛЕНИЕ: Передаем df как первый аргумент
-    flags = compute_quality_flags(df, summary, missing_df)
+    flags = compute_quality_flags(summary, missing_df)
     assert 0.0 <= flags["quality_score"] <= 1.0
 
 
