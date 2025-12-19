@@ -113,7 +113,7 @@ async def quality_from_csv(file: UploadFile = File(...)) -> QualityResponse:
     miss = missing_table(df)
 
     # Вызываем так, чтобы 100% отработали твои новые эвристики HW03 (нули/unique)
-    flags_all = compute_quality_flags(df, summary, miss)
+    flags_all = compute_quality_flags(summary, miss, df=df)
     flags_bool = {k: bool(v) for k, v in flags_all.items() if isinstance(v, bool)}
 
     score = float(flags_all.get("quality_score", 0.0))
@@ -153,6 +153,6 @@ async def quality_flags_from_csv(file: UploadFile = File(...)) -> QualityFlagsRe
 
     summary = summarize_dataset(df)
     miss = missing_table(df)
-    flags_all = compute_quality_flags(df, summary, miss)
+    flags_all = compute_quality_flags(summary, miss, df=df)
 
     return QualityFlagsResponse(flags=flags_all)

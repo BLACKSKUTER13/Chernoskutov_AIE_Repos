@@ -1,5 +1,5 @@
 """
-eda_cli — мини-CLI для EDA CSV-файлов (HW03).
+eda_cli — HTTP-сервис качества датасетов (HW04).
 """
 
 from . import core, viz, cli

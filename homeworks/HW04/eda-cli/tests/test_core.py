@@ -83,8 +83,8 @@ def test_has_constant_columns_flag():
     summary = summarize_dataset(df)
     missing_df = missing_table(df)
 
-    # Вызов функции
-    flags = compute_quality_flags(df, summary, missing_df)
+    # Передаём df через именованный параметр, чтобы сработали эвристики по нулям/unique
+    flags = compute_quality_flags(summary, missing_df, df=df)
 
     # 1. Проверка флага константности
     # ИСПРАВЛЕНО: используем '==' вместо 'is'

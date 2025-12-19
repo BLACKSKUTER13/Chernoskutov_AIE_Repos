@@ -115,7 +115,7 @@ def report(
     top_cats = top_categories(df, max_columns=5, top_k=top_k_categories)
 
     # 2. Качество в целом
-    quality_flags = compute_quality_flags(df, summary, missing_df)
+    quality_flags = compute_quality_flags(summary, missing_df, df=df)
 
     # 3. Сохраняем табличные артефакты
     summary_df.to_csv(out_root / "summary.csv", index=False)
