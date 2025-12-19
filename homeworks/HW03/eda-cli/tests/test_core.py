@@ -85,7 +85,7 @@ def test_has_constant_columns_flag():
     missing_df = missing_table(df)
 
     # Вызов функции
-    flags = compute_quality_flags(df, summary, missing_df)
+    flags = compute_quality_flags(summary, missing_df, df=df)
 
     # 1. Проверка флага константности
     # ИСПРАВЛЕНО: используем '==' вместо 'is'

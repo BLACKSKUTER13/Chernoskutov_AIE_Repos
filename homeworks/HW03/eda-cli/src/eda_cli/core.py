@@ -172,28 +172,16 @@ def top_categories(
 
     return result
 
-def compute_quality_flags(*args, **kwargs) -> Dict[str, Any]:
+def compute_quality_flags(
+    summary: DatasetSummary,
+    missing_df: pd.DataFrame,
+    *,
+    df: Optional[pd.DataFrame] = None,
+) -> Dict[str, Any]:
     """
-    Совместимость с двумя сигнатурами:
-    1) compute_quality_flags(summary, missing_df)   (как в шаблоне/у других)
-    2) compute_quality_flags(df, summary, missing_df) (как у тебя)
+    Считает quality-флаги и интегральный quality_score.
+    df опционален: нужен для эвристик по нулям/unique (если не передан — считаем по summary).
     """
-    df: Optional[pd.DataFrame]
-    summary: DatasetSummary
-    missing_df: pd.DataFrame
-
-    # Вариант как в автотестах/у других
-    if len(args) == 2 and isinstance(args[0], DatasetSummary):
-        summary, missing_df = args  # type: ignore[misc]
-        df = kwargs.get("df", None)
-    # Твой текущий вариант
-    elif len(args) == 3 and isinstance(args[0], pd.DataFrame):
-        df, summary, missing_df = args  # type: ignore[misc]
-    else:
-        raise TypeError(
-            "compute_quality_flags expects (summary, missing_df) or (df, summary, missing_df)"
-        )
-
     flags: Dict[str, Any] = {}
     flags["too_few_rows"] = summary.n_rows < 100
     flags["too_many_columns"] = summary.n_cols > 100
@@ -202,10 +190,11 @@ def compute_quality_flags(*args, **kwargs) -> Dict[str, Any]:
     flags["max_missing_share"] = max_missing_share
     flags["too_many_missing"] = max_missing_share > 0.5
 
-    # --- Константные колонки ---
+    # --- Константные колонки / min_unique_values_count ---
     if df is not None and not df.empty:
         unique_non_null = df.nunique(dropna=True)
         non_null_counts = df.notna().sum()
+
         constant_cols = [
             col for col in df.columns
             if non_null_counts[col] > 0 and unique_non_null[col] <= 1
@@ -219,7 +208,7 @@ def compute_quality_flags(*args, **kwargs) -> Dict[str, Any]:
     flags["constant_columns"] = constant_cols
     flags["min_unique_values_count"] = int(min_unique)
 
-    # --- Нули в числовых ---
+    # --- Нули в числовых / max_zero_values_share ---
     ZERO_SHARE_THRESHOLD = 0.8
     flags["zero_share_threshold"] = ZERO_SHARE_THRESHOLD
 
