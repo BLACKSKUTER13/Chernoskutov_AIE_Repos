@@ -8,7 +8,7 @@
 ## 2. Среда и воспроизводимость
 
 - Python: 3.12.7
-- torch / torchvision: torch 2.10.0, torchvision 0.25.0
+- torch / torchvision: torch 2.10.0+cpu, torchvision 0.25.0+cpu
 - Устройство (CPU/GPU): CPU (`device=cpu`)
 - Seed: 42
 - Как запустить: открыть `HW08-09.ipynb` и выполнить Run All.
